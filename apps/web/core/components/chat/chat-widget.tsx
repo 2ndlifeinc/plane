@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BotIcon, XIcon, CircleIcon, Trash2Icon } from "lucide-react";
+import { BotIcon, XIcon, CircleIcon, Trash2Icon, PlusIcon } from "lucide-react";
 import { useAgentChat } from "./use-agent-chat";
 import { MessageList } from "./message-list";
 import { ChatInput } from "./chat-input";
@@ -13,7 +13,7 @@ const STATUS_LABELS: Record<ConnectionStatus, { label: string; color: string }> 
 
 export const ChatWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { messages, status, isStreaming, connect, disconnect, sendMessage, abort, clearMessages } =
+  const { messages, status, isStreaming, sessionResumed, connect, disconnect, sendMessage, abort, clearMessages, newSession } =
     useAgentChat();
 
   // Connect when panel opens
@@ -70,6 +70,9 @@ export const ChatWidget: React.FC = () => {
                 <div className="flex items-center gap-1.5 text-[10px] text-tertiary">
                   <span className={`inline-block size-1.5 rounded-full ${statusConfig.color}`} />
                   {statusConfig.label}
+                  {sessionResumed && !isStreaming && (
+                    <span className="text-green-500 font-medium">• Resumed</span>
+                  )}
                   {isStreaming && (
                     <span className="text-blue-500 font-medium">• Streaming</span>
                   )}
@@ -77,6 +80,14 @@ export const ChatWidget: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center gap-1">
+              {/* New session button */}
+              <button
+                onClick={newSession}
+                className="flex size-7 items-center justify-center rounded-md text-tertiary hover:bg-layer-transparent-hover hover:text-secondary transition-colors"
+                title="New session"
+              >
+                <PlusIcon className="size-3.5" />
+              </button>
               {/* Clear button */}
               <button
                 onClick={clearMessages}

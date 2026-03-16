@@ -11,35 +11,117 @@ import type {
   ToolExecutionUpdateEvent,
 } from "./types";
 
-const WS_URL = "wss://pi.fcla.cc/api/rpc?agent=team-todo";
+const WS_BASE = "wss://pi.fcla.cc/api/rpc?agent=team-todo";
 const RECONNECT_DELAY = 3000;
 
 let messageCounter = 0;
 const nextId = () => `msg-${Date.now()}-${++messageCounter}`;
 
+/**
+ * Convert Pi RPC AgentMessage[] (from get_messages) to ChatMessage[]
+ */
+function convertRpcMessages(rpcMessages: unknown[]): ChatMessage[] {
+  const result: ChatMessage[] = [];
+
+  for (const msg of rpcMessages) {
+    const m = msg as Record<string, unknown>;
+    const role = m.role as string;
+    const ts = (m.timestamp as number) || Date.now();
+
+    if (role === "user") {
+      const content = m.content;
+      const text = typeof content === "string"
+        ? content
+        : Array.isArray(content)
+          ? (content as { type: string; text?: string }[]).filter((c) => c.type === "text").map((c) => c.text).join("")
+          : "";
+      result.push({ id: nextId(), role: "user", timestamp: ts, text, parts: [] });
+    } else if (role === "assistant") {
+      const contentBlocks = (m.content as unknown[]) || [];
+      const parts: MessagePart[] = [];
+      for (const block of contentBlocks) {
+        const b = block as Record<string, unknown>;
+        if (b.type === "text" && b.text) {
+          parts.push({ type: "text", text: b.text as string });
+        } else if (b.type === "thinking" && b.thinking) {
+          parts.push({ type: "thinking", text: b.thinking as string });
+        } else if (b.type === "toolCall") {
+          parts.push({
+            type: "toolCall",
+            toolCallId: (b.id as string) || "",
+            toolName: (b.name as string) || "",
+            args: (b.arguments as Record<string, unknown>) || {},
+            state: "completed",
+          });
+        }
+      }
+      result.push({
+        id: nextId(),
+        role: "assistant",
+        timestamp: ts,
+        parts,
+        model: m.model as string | undefined,
+      });
+    } else if (role === "toolResult") {
+      // Attach result to the last matching tool call
+      const toolCallId = m.toolCallId as string;
+      const content = m.content as { type: string; text: string }[] | undefined;
+      const text = content?.map((c) => c.text).join("") ?? "";
+      const isError = m.isError as boolean;
+      // Find last assistant message with this toolCallId
+      for (let i = result.length - 1; i >= 0; i--) {
+        const am = result[i];
+        if (am.role !== "assistant") continue;
+        const tc = am.parts.find(
+          (p) => p.type === "toolCall" && (p as ToolCallPart).toolCallId === toolCallId
+        ) as ToolCallPart | undefined;
+        if (tc) {
+          tc.result = text;
+          tc.state = isError ? "error" : "completed";
+          tc.isError = isError;
+          break;
+        }
+      }
+    }
+  }
+  return result;
+}
+
 export function useAgentChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [status, setStatus] = useState<ConnectionStatus>("disconnected");
   const [isStreaming, setIsStreaming] = useState(false);
+  const [sessionResumed, setSessionResumed] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout>>();
   const currentAssistantId = useRef<string | null>(null);
+  const hasLoadedHistory = useRef(false);
 
-  // --- WebSocket connection ---
+  // --- Load session history via get_messages ---
+  const loadSessionHistory = useCallback(() => {
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN || hasLoadedHistory.current) return;
+    hasLoadedHistory.current = true;
+    ws.send(JSON.stringify({ id: "load-history", type: "get_messages" }));
+  }, []);
+
+  // --- WebSocket connection (always continue=true) ---
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
     setStatus("connecting");
+    hasLoadedHistory.current = false;
 
-    const ws = new WebSocket(WS_URL);
+    const ws = new WebSocket(`${WS_BASE}&continue=true`);
     wsRef.current = ws;
 
-    ws.onopen = () => setStatus("connected");
+    ws.onopen = () => {
+      setStatus("connected");
+    };
 
     ws.onclose = () => {
       setStatus("disconnected");
       setIsStreaming(false);
       currentAssistantId.current = null;
-      // Auto-reconnect
       reconnectTimer.current = setTimeout(connect, RECONNECT_DELAY);
     };
 
@@ -65,12 +147,39 @@ export function useAgentChat() {
     setStatus("disconnected");
   }, []);
 
+  // --- New session ---
+  const newSession = useCallback(() => {
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    ws.send(JSON.stringify({ type: "new_session" }));
+    setMessages([]);
+    setSessionResumed(false);
+    hasLoadedHistory.current = false;
+  }, []);
+
   // --- Event handler ---
   const handleEvent = useCallback((event: RpcEvent) => {
     switch (event.type) {
       case "session_started":
-        // Connection confirmed
+        // Connection confirmed — load history
+        loadSessionHistory();
         break;
+
+      case "response": {
+        const resp = event as RpcEvent & { command?: string; success?: boolean; data?: unknown };
+        // Handle get_messages response
+        if (resp.command === "get_messages" && resp.success && resp.data) {
+          const data = resp.data as { messages?: unknown[] };
+          if (data.messages && data.messages.length > 0) {
+            const history = convertRpcMessages(data.messages);
+            if (history.length > 0) {
+              setMessages(history);
+              setSessionResumed(true);
+            }
+          }
+        }
+        break;
+      }
 
       case "agent_start":
         setIsStreaming(true);
@@ -153,7 +262,7 @@ export function useAgentChat() {
         break;
       }
     }
-  }, []);
+  }, [loadSessionHistory]);
 
   // --- Delta application ---
   function applyDelta(parts: MessagePart[], delta: MessageUpdateEvent["assistantMessageEvent"]) {
@@ -236,7 +345,6 @@ export function useAgentChat() {
     (text: string) => {
       if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
 
-      // Add user message
       const userMsg: ChatMessage = {
         id: nextId(),
         role: "user",
@@ -246,7 +354,6 @@ export function useAgentChat() {
       };
       setMessages((prev) => [...prev, userMsg]);
 
-      // Send prompt via RPC
       const cmd = isStreaming
         ? { type: "prompt", message: text, streamingBehavior: "followUp" }
         : { type: "prompt", message: text };
@@ -261,10 +368,10 @@ export function useAgentChat() {
     wsRef.current.send(JSON.stringify({ type: "abort" }));
   }, []);
 
-  // --- Clear messages ---
+  // --- Clear messages (new session) ---
   const clearMessages = useCallback(() => {
-    setMessages([]);
-  }, []);
+    newSession();
+  }, [newSession]);
 
   // Cleanup on unmount
   useEffect(() => () => disconnect(), [disconnect]);
@@ -273,10 +380,12 @@ export function useAgentChat() {
     messages,
     status,
     isStreaming,
+    sessionResumed,
     connect,
     disconnect,
     sendMessage,
     abort,
     clearMessages,
+    newSession,
   };
 }
