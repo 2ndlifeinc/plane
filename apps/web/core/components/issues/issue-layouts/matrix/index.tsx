@@ -89,20 +89,20 @@ const QuadrantCard = observer(function QuadrantCard({
   const Icon = config.icon;
 
   return (
-    <div className={cn("rounded-lg border bg-layer-2 flex flex-col min-h-0 overflow-hidden", config.border)}>
+    <div className={cn("rounded-lg flex flex-col min-h-0 overflow-hidden", config.headerBg)}>
       {/* header */}
-      <div className={cn("flex items-center gap-2 px-3 py-2 border-b border-subtle", config.headerBg)}>
+      <div className="flex items-center gap-2 px-3 py-2">
         <Icon size={14} className={config.headerText} />
         <span className={cn("text-13 font-semibold", config.headerText)}>{config.title}</span>
         <span className="text-13 text-tertiary">· {config.subtitle}</span>
         <span className={cn("ml-auto text-13 font-bold", config.headerText)}>{issues.length}</span>
       </div>
       {/* body */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto px-1 pb-1">
         {issues.map((issue) => (
           <div
             key={issue.id}
-            className="flex items-center gap-2 min-h-9 px-3 border-b border-subtle last:border-b-0 cursor-pointer transition-colors hover:bg-layer-transparent-hover"
+            className="flex items-center gap-2 min-h-9 px-2 rounded-md cursor-pointer transition-colors hover:bg-layer-transparent-hover"
             onClick={() => onIssueClick(issue)}
           >
             <PriorityIcon priority={issue.priority} className="size-3.5 shrink-0" />
