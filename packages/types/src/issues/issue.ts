@@ -19,6 +19,7 @@ export enum EIssueLayoutTypes {
   GANTT = "gantt_chart",
   SPREADSHEET = "spreadsheet",
   FOCUS = "focus",
+  MATRIX = "matrix",
 }
 
 export enum EIssueServiceType {

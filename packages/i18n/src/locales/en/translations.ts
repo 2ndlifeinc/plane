@@ -881,6 +881,7 @@ export default {
       spreadsheet: "Table",
       gantt: "Timeline",
       focus: "Focus",
+      matrix: "Matrix",
       title: {
         list: "List Layout",
         kanban: "Board Layout",
@@ -888,6 +889,7 @@ export default {
         spreadsheet: "Table Layout",
         gantt: "Timeline Layout",
         focus: "Focus Layout",
+        matrix: "Matrix Layout",
       },
     },
     states: {

@@ -41,6 +41,7 @@ const LAYOUTS = [
   EIssueLayoutTypes.SPREADSHEET,
   EIssueLayoutTypes.GANTT,
   EIssueLayoutTypes.FOCUS,
+  EIssueLayoutTypes.MATRIX,
 ];
 
 export const HeaderFilters = observer(function HeaderFilters(props: Props) {

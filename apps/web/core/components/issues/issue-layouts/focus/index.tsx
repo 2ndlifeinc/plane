@@ -1,18 +1,20 @@
 /**
  * 🎯 포커스 대시보드 뷰
- * "지금 뭐 해야 해?" 에 즉시 답하는 ADHD 최적화 뷰
+ * "지금 뭐 해야 해?" 에 즉시 답하는 뷰
  */
 
+import { useState } from "react";
 import { observer } from "mobx-react";
 import { useParams } from "next/navigation";
 import useSWR from "swr";
-import { AlertTriangle, Clock, TrendingUp, BarChart3, Target } from "lucide-react";
+import { AlertTriangle, Clock, TrendingUp, BarChart3, Target, ChevronDown, ChevronRight } from "lucide-react";
 // plane imports
 import type { TIssue } from "@plane/types";
-import { EIssuesStoreType } from "@plane/types";
+import { EIssuesStoreType, EIssueServiceType } from "@plane/types";
 import { Spinner } from "@plane/ui";
 // hooks
 import { useIssues } from "@/hooks/store/use-issues";
+import { useIssueDetail } from "@/hooks/store/use-issue-detail";
 import { useProjectState } from "@/hooks/store/use-project-state";
 
 function getDaysUntil(dateStr: string | null | undefined): number | null {
@@ -62,8 +64,11 @@ const DeadlineBadge = ({ targetDate }: { targetDate: string | null | undefined }
   return <span className="px-1.5 py-0.5 rounded text-xs text-custom-text-300">D-{days}</span>;
 };
 
-const IssueRow = ({ issue }: { issue: TIssue }) => (
-  <div className="flex items-center gap-3 py-2.5 px-3 rounded-md hover:bg-custom-background-90 transition-colors cursor-pointer border-b border-custom-border-100 last:border-0">
+const IssueRow = ({ issue, onClick }: { issue: TIssue; onClick: () => void }) => (
+  <div
+    className="flex items-center gap-3 py-2.5 px-3 rounded-md hover:bg-custom-background-90 transition-colors cursor-pointer border-b border-custom-border-100 last:border-0"
+    onClick={onClick}
+  >
     <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: getPriorityColor(issue.priority) }} />
     <div className="flex-1 min-w-0">
       <div className="text-sm font-medium truncate text-custom-text-100">{issue.name}</div>
@@ -80,20 +85,29 @@ const IssueRow = ({ issue }: { issue: TIssue }) => (
   </div>
 );
 
-const Section = ({ title, icon: Icon, children, count, color = "#a1a1aa" }: {
-  title: string; icon: any; children: React.ReactNode; count?: number; color?: string;
-}) => (
-  <div className="mb-6">
-    <div className="flex items-center gap-2 mb-2">
-      <Icon size={14} style={{ color }} />
-      <h3 className="text-sm font-semibold text-custom-text-200 uppercase tracking-wider">{title}</h3>
-      {count !== undefined && <span className="text-xs text-custom-text-400">({count})</span>}
+const Section = ({ title, icon: Icon, children, count, color = "#a1a1aa", defaultOpen = true }: {
+  title: string; icon: any; children: React.ReactNode; count?: number; color?: string; defaultOpen?: boolean;
+}) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  return (
+    <div className="mb-6">
+      <div
+        className="flex items-center gap-2 mb-2 cursor-pointer select-none"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        {isOpen ? <ChevronDown size={14} className="text-custom-text-400" /> : <ChevronRight size={14} className="text-custom-text-400" />}
+        <Icon size={14} style={{ color }} />
+        <h3 className="text-sm font-semibold text-custom-text-200 uppercase tracking-wider">{title}</h3>
+        {count !== undefined && <span className="text-xs text-custom-text-400">({count})</span>}
+      </div>
+      {isOpen && (
+        <div className="rounded-lg border border-custom-border-200 bg-custom-background-100">
+          {children}
+        </div>
+      )}
     </div>
-    <div className="rounded-lg border border-custom-border-200 bg-custom-background-100">
-      {children}
-    </div>
-  </div>
-);
+  );
+};
 
 export const FocusLayout = observer(function FocusLayout() {
   const { workspaceSlug: ws, projectId: pj } = useParams();
@@ -103,8 +117,21 @@ export const FocusLayout = observer(function FocusLayout() {
   const { issues, issuesFilter } = useIssues(EIssuesStoreType.PROJECT);
   const { issueMap } = useIssues();
   const { projectStates } = useProjectState();
+  const { setPeekIssue, getIsIssuePeeked } = useIssueDetail(EIssueServiceType.ISSUES);
 
-  // 이슈 fetch (다른 뷰와 동일한 패턴)
+  const handleIssuePeekOverview = (issue: TIssue) => {
+    if (workspaceSlug && issue?.project_id && issue?.id && !getIsIssuePeeked(issue.id)) {
+      setPeekIssue({
+        workspaceSlug,
+        projectId: issue.project_id,
+        issueId: issue.id,
+        nestingLevel: 0,
+        isArchived: !!issue.archived_at,
+      });
+    }
+  };
+
+  // 이슈 fetch
   useSWR(
     workspaceSlug && projectId ? `FOCUS_VIEW_ISSUES_${workspaceSlug}_${projectId}` : null,
     async () => {
@@ -119,7 +146,6 @@ export const FocusLayout = observer(function FocusLayout() {
     { revalidateIfStale: false, revalidateOnFocus: false }
   );
 
-  // 로딩 중
   if (issues?.getIssueLoader() === "init-loader") {
     return (
       <div className="flex items-center justify-center h-full">
@@ -128,7 +154,6 @@ export const FocusLayout = observer(function FocusLayout() {
     );
   }
 
-  // issueMap에서 전체 이슈 수집
   const allIssues: TIssue[] = Object.values(issueMap).filter(
     (i) => i && i.project_id === projectId
   );
@@ -145,25 +170,19 @@ export const FocusLayout = observer(function FocusLayout() {
 
   // 분류
   const active = allIssues.filter((i) => !i.completed_at && !i.archived_at);
-
   const overdue = active
     .filter((i) => i.target_date && getDaysUntil(i.target_date)! < 0)
     .sort((a, b) => getDaysUntil(a.target_date)! - getDaysUntil(b.target_date)!);
-
   const thisWeek = active
     .filter((i) => i.target_date && getDaysUntil(i.target_date)! >= 0 && getDaysUntil(i.target_date)! <= 7)
     .sort((a, b) => getDaysUntil(a.target_date)! - getDaysUntil(b.target_date)!);
-
   const urgent = active.filter((i) => i.priority === "urgent");
   const highPri = active.filter((i) => i.priority === "high");
-
   const inProgress = active.filter((i) => {
     const state = projectStates?.find((s) => s.id === i.state_id);
     return state?.group === "started";
   });
-
   const completed = allIssues.filter((i) => i.completed_at);
-
   const stale = active.filter((i) => {
     const days = getDaysUntil(i.updated_at);
     return days !== null && days < -14;
@@ -179,47 +198,36 @@ export const FocusLayout = observer(function FocusLayout() {
         <StatCard label="완료" count={completed.length} color="#22c55e" icon={BarChart3} />
       </div>
 
-      {/* 기한 경과 */}
       {overdue.length > 0 && (
-        <Section title="⚠️ 기한 경과 — 즉시 확인" icon={AlertTriangle} count={overdue.length} color="#ef4444">
-          {overdue.map((i) => <IssueRow key={i.id} issue={i} />)}
+        <Section title="기한 경과 — 즉시 확인" icon={AlertTriangle} count={overdue.length} color="#ef4444">
+          {overdue.map((i) => <IssueRow key={i.id} issue={i} onClick={() => handleIssuePeekOverview(i)} />)}
         </Section>
       )}
-
-      {/* 이번 주 마감 */}
       {thisWeek.length > 0 && (
-        <Section title="📅 이번 주 마감" icon={Clock} count={thisWeek.length} color="#f59e0b">
-          {thisWeek.map((i) => <IssueRow key={i.id} issue={i} />)}
+        <Section title="이번 주 마감" icon={Clock} count={thisWeek.length} color="#f59e0b">
+          {thisWeek.map((i) => <IssueRow key={i.id} issue={i} onClick={() => handleIssuePeekOverview(i)} />)}
         </Section>
       )}
-
-      {/* 긴급 */}
       {urgent.length > 0 && (
-        <Section title="🔴 긴급 (Urgent)" icon={AlertTriangle} count={urgent.length} color="#ef4444">
-          {urgent.map((i) => <IssueRow key={i.id} issue={i} />)}
+        <Section title="긴급 (Urgent)" icon={AlertTriangle} count={urgent.length} color="#ef4444">
+          {urgent.map((i) => <IssueRow key={i.id} issue={i} onClick={() => handleIssuePeekOverview(i)} />)}
         </Section>
       )}
-
-      {/* 높은 우선순위 */}
       {highPri.length > 0 && (
-        <Section title="🟠 높은 우선순위 (High)" icon={TrendingUp} count={highPri.length} color="#f97316">
-          {highPri.slice(0, 10).map((i) => <IssueRow key={i.id} issue={i} />)}
+        <Section title="높은 우선순위 (High)" icon={TrendingUp} count={highPri.length} color="#f97316">
+          {highPri.slice(0, 10).map((i) => <IssueRow key={i.id} issue={i} onClick={() => handleIssuePeekOverview(i)} />)}
           {highPri.length > 10 && <div className="text-xs text-custom-text-400 px-3 py-2">+{highPri.length - 10}건 더</div>}
         </Section>
       )}
-
-      {/* 진행중 */}
       {inProgress.length > 0 && (
-        <Section title="🔄 진행중" icon={TrendingUp} count={inProgress.length} color="#3b82f6">
-          {inProgress.slice(0, 8).map((i) => <IssueRow key={i.id} issue={i} />)}
+        <Section title="진행중" icon={TrendingUp} count={inProgress.length} color="#3b82f6">
+          {inProgress.slice(0, 8).map((i) => <IssueRow key={i.id} issue={i} onClick={() => handleIssuePeekOverview(i)} />)}
           {inProgress.length > 8 && <div className="text-xs text-custom-text-400 px-3 py-2">+{inProgress.length - 8}건 더</div>}
         </Section>
       )}
-
-      {/* 방치 경고 */}
       {stale.length > 0 && (
-        <Section title="💀 방치 경고 (14일+ 미업데이트)" icon={Clock} count={stale.length} color="#78716c">
-          {stale.slice(0, 5).map((i) => <IssueRow key={i.id} issue={i} />)}
+        <Section title="방치 경고 (14일+ 미업데이트)" icon={Clock} count={stale.length} color="#78716c" defaultOpen={false}>
+          {stale.slice(0, 5).map((i) => <IssueRow key={i.id} issue={i} onClick={() => handleIssuePeekOverview(i)} />)}
           {stale.length > 5 && <div className="text-xs text-custom-text-400 px-3 py-2">+{stale.length - 5}건 더</div>}
         </Section>
       )}

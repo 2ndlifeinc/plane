@@ -21,6 +21,7 @@ import { IssuesStoreContext } from "@/hooks/use-issue-layout-store";
 import { IssuePeekOverview } from "../../peek-overview";
 import { CalendarLayout } from "../calendar/roots/project-root";
 import { FocusLayout } from "../focus";
+import { MatrixLayout } from "../matrix";
 import { BaseGanttRoot } from "../gantt";
 import { KanBanLayout } from "../kanban/roots/project-root";
 import { ListLayout } from "../list/roots/project-root";
@@ -40,6 +41,8 @@ function ProjectIssueLayout(props: { activeLayout: EIssueLayoutTypes | undefined
       return <ProjectSpreadsheetLayout />;
     case EIssueLayoutTypes.FOCUS:
       return <FocusLayout />;
+    case EIssueLayoutTypes.MATRIX:
+      return <MatrixLayout />;
     default:
       return null;
   }
