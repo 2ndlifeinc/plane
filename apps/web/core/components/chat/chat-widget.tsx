@@ -44,7 +44,7 @@ export const ChatWidget: React.FC = () => {
         <button
           onClick={() => setIsOpen(true)}
           className="fixed bottom-5 right-5 z-[9999] flex size-12 items-center justify-center rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 transition-all hover:scale-105 active:scale-95"
-          title="Chat with Dev Agent (Ctrl+Shift+K)"
+          title="Chat with Team Todo (Ctrl+Shift+K)"
         >
           <BotIcon className="size-5" />
           {isStreaming && (
@@ -66,7 +66,7 @@ export const ChatWidget: React.FC = () => {
                 <BotIcon className="size-3.5" />
               </div>
               <div>
-                <div className="text-13 font-medium text-primary">Dev Agent</div>
+                <div className="text-13 font-medium text-primary">Team Todo</div>
                 <div className="flex items-center gap-1.5 text-[10px] text-tertiary">
                   <span className={`inline-block size-1.5 rounded-full ${statusConfig.color}`} />
                   {statusConfig.label}

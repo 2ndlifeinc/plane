@@ -11,7 +11,7 @@ import type {
   ToolExecutionUpdateEvent,
 } from "./types";
 
-const WS_URL = "wss://pi.fcla.cc/api/rpc?agent=dev";
+const WS_URL = "wss://pi.fcla.cc/api/rpc?agent=team-todo";
 const RECONNECT_DELAY = 3000;
 
 let messageCounter = 0;

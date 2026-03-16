@@ -28,9 +28,9 @@ export const MessageList: React.FC<MessageListProps> = ({ messages }) => {
     return (
       <div className="flex flex-1 items-center justify-center text-tertiary text-13">
         <div className="text-center space-y-1">
-          <div className="text-2xl">🤖</div>
-          <div>Send a message to start chatting</div>
-          <div className="text-[11px]">Connected to dev agent via Pi RPC</div>
+          <div className="text-2xl">📋</div>
+          <div>할일을 물어보세요</div>
+          <div className="text-[11px]">Plane 이슈 조회 · 생성 · 수정 · 현황 요약</div>
         </div>
       </div>
     );

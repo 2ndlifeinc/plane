@@ -48,7 +48,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
         onInput={handleInput}
-        placeholder={disabled ? "Connecting..." : "Message dev agent..."}
+        placeholder={disabled ? "Connecting..." : "할일을 물어보세요..."}
         disabled={disabled}
         rows={1}
         className="flex-1 resize-none rounded-md border border-subtle bg-layer-2 px-3 py-2 text-13 text-primary placeholder:text-placeholder focus:outline-none focus:border-primary transition-colors disabled:opacity-50"
