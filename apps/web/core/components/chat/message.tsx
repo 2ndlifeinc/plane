@@ -72,7 +72,7 @@ const TextBlock: React.FC<{ part: TextPart }> = ({ part }) => {
   );
 };
 
-/** Lightweight markdown: code blocks, inline code, bold, links, paragraphs */
+/** Lightweight markdown: code blocks, tables, inline code, bold, links, paragraphs */
 function SimpleMarkdown({ text }: { text: string }) {
   // Split by code blocks first
   const parts = text.split(/(```[\s\S]*?```)/g);
@@ -81,7 +81,6 @@ function SimpleMarkdown({ text }: { text: string }) {
     <>
       {parts.map((segment, i) => {
         if (segment.startsWith("```")) {
-          // Code block
           const match = segment.match(/^```(\w*)\n?([\s\S]*?)```$/);
           const lang = match?.[1] || "";
           const code = match?.[2] || segment.slice(3, -3);
@@ -97,28 +96,109 @@ function SimpleMarkdown({ text }: { text: string }) {
             </pre>
           );
         }
-        // Inline formatting
-        return <InlineText key={i} text={segment} />;
+        return <BlockContent key={i} text={segment} />;
       })}
     </>
   );
 }
 
-function InlineText({ text }: { text: string }) {
-  // Split into paragraphs
-  const paragraphs = text.split(/\n\n+/);
+/** Parse block-level elements: tables, headings, lists, paragraphs */
+function BlockContent({ text }: { text: string }) {
+  const blocks = text.split(/\n\n+/);
+  const result: React.ReactNode[] = [];
+
+  for (let i = 0; i < blocks.length; i++) {
+    const block = blocks[i].trim();
+    if (!block) continue;
+
+    // Table detection: lines starting with |
+    const lines = block.split("\n");
+    if (lines.length >= 2 && lines[0].includes("|") && lines[1].match(/^\|?\s*[-:]+/)) {
+      result.push(<MarkdownTable key={i} lines={lines} />);
+      continue;
+    }
+
+    // Heading detection
+    const headingMatch = block.match(/^(#{1,4})\s+(.+)$/m);
+    if (headingMatch && block.split("\n").length === 1) {
+      const level = headingMatch[1].length;
+      const cls = level <= 2 ? "text-[14px] font-semibold" : "text-13 font-medium";
+      result.push(
+        <div key={i} className={`my-1.5 ${cls} text-primary`}>
+          {formatInline(headingMatch[2])}
+        </div>
+      );
+      continue;
+    }
+
+    // List detection
+    if (lines.every((l) => l.match(/^\s*[-*•]\s|^\s*\d+[.)]\s/) || !l.trim())) {
+      result.push(
+        <ul key={i} className="my-1 ml-4 space-y-0.5 list-disc">
+          {lines
+            .filter((l) => l.trim())
+            .map((l, j) => (
+              <li key={j} className="text-13 leading-relaxed">
+                {formatInline(l.replace(/^\s*[-*•]\s|^\s*\d+[.)]\s/, ""))}
+              </li>
+            ))}
+        </ul>
+      );
+      continue;
+    }
+
+    // Regular paragraph
+    result.push(
+      <p key={i} className="my-1 whitespace-pre-wrap break-words leading-relaxed">
+        {formatInline(block)}
+      </p>
+    );
+  }
+
+  return <>{result}</>;
+}
+
+/** Render a markdown table */
+function MarkdownTable({ lines }: { lines: string[] }) {
+  const parseRow = (line: string) =>
+    line
+      .replace(/^\|/, "")
+      .replace(/\|$/, "")
+      .split("|")
+      .map((cell) => cell.trim());
+
+  const headers = parseRow(lines[0]);
+  // Skip separator line (lines[1])
+  const rows = lines.slice(2).map(parseRow);
 
   return (
-    <>
-      {paragraphs.map((para, i) => {
-        if (!para.trim()) return null;
-        return (
-          <p key={i} className="my-1 whitespace-pre-wrap break-words leading-relaxed">
-            {formatInline(para)}
-          </p>
-        );
-      })}
-    </>
+    <div className="my-2 overflow-x-auto rounded-md border border-subtle">
+      <table className="w-full text-13">
+        <thead>
+          <tr className="border-b border-subtle bg-layer-2">
+            {headers.map((h, i) => (
+              <th
+                key={i}
+                className="px-2.5 py-1.5 text-left text-[11px] font-medium uppercase tracking-wide text-tertiary"
+              >
+                {formatInline(h)}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i} className="border-b border-subtle last:border-b-0 hover:bg-layer-transparent-hover">
+              {row.map((cell, j) => (
+                <td key={j} className="px-2.5 py-1.5 text-primary">
+                  {formatInline(cell)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
