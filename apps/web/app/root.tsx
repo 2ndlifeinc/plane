@@ -4,7 +4,7 @@
  * See the LICENSE file for details.
  */
 
-import type { ReactNode } from "react";
+import { lazy, Suspense, type ReactNode } from "react";
 import Script from "next/script";
 import { Links, Meta, Outlet, Scripts } from "react-router";
 import type { LinksFunction } from "react-router";
@@ -12,6 +12,10 @@ import { ThemeProvider, useTheme } from "next-themes";
 // plane imports
 import { SITE_DESCRIPTION, SITE_NAME } from "@plane/constants";
 import { cn } from "@plane/utils";
+// chat widget
+const ChatWidget = lazy(() =>
+  import("@/components/chat/chat-widget").then((m) => ({ default: m.ChatWidget }))
+);
 // types
 // assets
 import favicon16 from "@/app/assets/favicon/favicon-16x16.png?url";
@@ -128,6 +132,10 @@ export default function Root() {
           <Outlet />
         </main>
       </div>
+      {/* Floating Chat Widget — Dev Agent */}
+      <Suspense fallback={null}>
+        <ChatWidget />
+      </Suspense>
     </AppProvider>
   );
 }
