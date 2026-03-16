@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
-import { BotIcon, XIcon, CircleIcon, Trash2Icon, PlusIcon } from "lucide-react";
+import { BotIcon, XIcon, CircleIcon, Trash2Icon, PlusIcon, ListIcon } from "lucide-react";
 import { useAgentChat } from "./use-agent-chat";
 import { MessageList } from "./message-list";
 import { ChatInput } from "./chat-input";
+import { SessionPicker } from "./session-picker";
 import type { ConnectionStatus } from "./types";
+import type { SessionSelection } from "./session-picker";
 
 const STATUS_LABELS: Record<ConnectionStatus, { label: string; color: string }> = {
   disconnected: { label: "Disconnected", color: "bg-red-500" },
@@ -11,15 +13,21 @@ const STATUS_LABELS: Record<ConnectionStatus, { label: string; color: string }> 
   connected: { label: "Connected", color: "bg-green-500" },
 };
 
+type View = "chat" | "sessions";
+
 export const ChatWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { messages, status, isStreaming, sessionResumed, connect, disconnect, sendMessage, abort, clearMessages, newSession } =
-    useAgentChat();
+  const [view, setView] = useState<View>("chat");
+  const {
+    messages, status, isStreaming, sessionResumed,
+    connect, disconnect, sendMessage, abort, clearMessages,
+    newSession, startSession,
+  } = useAgentChat();
 
-  // Connect when panel opens
+  // Connect when panel opens (continue last session by default)
   useEffect(() => {
     if (isOpen && status === "disconnected") {
-      connect();
+      connect({ continueSession: true });
     }
   }, [isOpen, status, connect]);
 
@@ -34,6 +42,11 @@ export const ChatWidget: React.FC = () => {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, []);
+
+  const handleSessionSelect = (opts: SessionSelection) => {
+    setView("chat");
+    startSession(opts);
+  };
 
   const statusConfig = STATUS_LABELS[status];
 
@@ -80,26 +93,33 @@ export const ChatWidget: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center gap-1">
+              {/* Sessions list button */}
+              <button
+                onClick={() => setView(view === "sessions" ? "chat" : "sessions")}
+                className={`flex size-7 items-center justify-center rounded-md transition-colors ${
+                  view === "sessions"
+                    ? "bg-primary/10 text-primary"
+                    : "text-tertiary hover:bg-layer-transparent-hover hover:text-secondary"
+                }`}
+                title="세션 목록"
+              >
+                <ListIcon className="size-3.5" />
+              </button>
               {/* New session button */}
               <button
-                onClick={newSession}
+                onClick={() => {
+                  setView("chat");
+                  startSession({});
+                }}
                 className="flex size-7 items-center justify-center rounded-md text-tertiary hover:bg-layer-transparent-hover hover:text-secondary transition-colors"
-                title="New session"
+                title="새 세션"
               >
                 <PlusIcon className="size-3.5" />
-              </button>
-              {/* Clear button */}
-              <button
-                onClick={clearMessages}
-                className="flex size-7 items-center justify-center rounded-md text-tertiary hover:bg-layer-transparent-hover hover:text-secondary transition-colors"
-                title="Clear messages"
-              >
-                <Trash2Icon className="size-3.5" />
               </button>
               {/* Reconnect button */}
               {status === "disconnected" && (
                 <button
-                  onClick={connect}
+                  onClick={() => connect({ continueSession: true })}
                   className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-tertiary hover:bg-layer-transparent-hover hover:text-secondary transition-colors"
                 >
                   <CircleIcon className="size-2.5" />
@@ -117,16 +137,20 @@ export const ChatWidget: React.FC = () => {
             </div>
           </div>
 
-          {/* Messages */}
-          <MessageList messages={messages} />
-
-          {/* Input */}
-          <ChatInput
-            onSend={sendMessage}
-            onAbort={abort}
-            isStreaming={isStreaming}
-            disabled={status !== "connected"}
-          />
+          {/* Content: Sessions or Chat */}
+          {view === "sessions" ? (
+            <SessionPicker agentName="team-todo" onSelect={handleSessionSelect} />
+          ) : (
+            <>
+              <MessageList messages={messages} />
+              <ChatInput
+                onSend={sendMessage}
+                onAbort={abort}
+                isStreaming={isStreaming}
+                disabled={status !== "connected"}
+              />
+            </>
+          )}
         </div>
       )}
     </>

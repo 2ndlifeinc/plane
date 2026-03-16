@@ -87,6 +87,11 @@ function convertRpcMessages(rpcMessages: unknown[]): ChatMessage[] {
   return result;
 }
 
+export interface SessionOptions {
+  sessionPath?: string;
+  continueSession?: boolean;
+}
+
 export function useAgentChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [status, setStatus] = useState<ConnectionStatus>("disconnected");
@@ -96,6 +101,7 @@ export function useAgentChat() {
   const reconnectTimer = useRef<ReturnType<typeof setTimeout>>();
   const currentAssistantId = useRef<string | null>(null);
   const hasLoadedHistory = useRef(false);
+  const sessionOptsRef = useRef<SessionOptions>({ continueSession: true });
 
   // --- Load session history via get_messages ---
   const loadSessionHistory = useCallback(() => {
@@ -105,13 +111,25 @@ export function useAgentChat() {
     ws.send(JSON.stringify({ id: "load-history", type: "get_messages" }));
   }, []);
 
-  // --- WebSocket connection (always continue=true) ---
-  const connect = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+  // --- WebSocket connection ---
+  const connect = useCallback((opts?: SessionOptions) => {
+    if (opts) sessionOptsRef.current = opts;
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.close();
+    }
     setStatus("connecting");
+    setMessages([]);
     hasLoadedHistory.current = false;
 
-    const ws = new WebSocket(`${WS_BASE}&continue=true`);
+    let wsUrl = WS_BASE;
+    const so = sessionOptsRef.current;
+    if (so.sessionPath) {
+      wsUrl += `&session=${encodeURIComponent(so.sessionPath)}`;
+    } else if (so.continueSession) {
+      wsUrl += `&continue=true`;
+    }
+
+    const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
     ws.onopen = () => {
@@ -147,7 +165,16 @@ export function useAgentChat() {
     setStatus("disconnected");
   }, []);
 
-  // --- New session ---
+  // --- Start a specific session (new, continue, or resume) ---
+  const startSession = useCallback((opts: SessionOptions) => {
+    disconnect();
+    sessionOptsRef.current = opts;
+    setSessionResumed(false);
+    // Small delay to ensure old WS is closed
+    setTimeout(() => connect(opts), 100);
+  }, [connect, disconnect]);
+
+  // --- New session via RPC (within existing connection) ---
   const newSession = useCallback(() => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
@@ -387,5 +414,6 @@ export function useAgentChat() {
     abort,
     clearMessages,
     newSession,
+    startSession,
   };
 }
