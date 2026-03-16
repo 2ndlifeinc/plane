@@ -29,7 +29,7 @@ export const MessageList: React.FC<MessageListProps> = ({ messages }) => {
       <div className="flex flex-1 items-center justify-center text-tertiary text-13">
         <div className="text-center space-y-1">
           <div className="text-2xl">📋</div>
-          <div>할일을 물어보세요</div>
+          <div>할일 등록 · 현황 확인</div>
           <div className="text-[11px]">Plane 이슈 조회 · 생성 · 수정 · 현황 요약</div>
         </div>
       </div>
