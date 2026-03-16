@@ -4,7 +4,7 @@
  * See the LICENSE file for details.
  */
 
-import { lazy, Suspense, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import Script from "next/script";
 import { Links, Meta, Outlet, Scripts } from "react-router";
 import type { LinksFunction } from "react-router";
@@ -12,10 +12,16 @@ import { ThemeProvider, useTheme } from "next-themes";
 // plane imports
 import { SITE_DESCRIPTION, SITE_NAME } from "@plane/constants";
 import { cn } from "@plane/utils";
-// chat widget
+// chat widget (client-only)
 const ChatWidget = lazy(() =>
   import("@/components/chat/chat-widget").then((m) => ({ default: m.ChatWidget }))
 );
+
+function ClientOnly({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted ? <>{children}</> : null;
+}
 // types
 // assets
 import favicon16 from "@/app/assets/favicon/favicon-16x16.png?url";
@@ -126,17 +132,21 @@ export const meta: Route.MetaFunction = () => [
 
 export default function Root() {
   return (
-    <AppProvider>
-      <div className={cn("relative flex h-screen w-full flex-col overflow-hidden bg-canvas", "desktop-app-container")}>
-        <main className="relative h-full w-full overflow-hidden">
-          <Outlet />
-        </main>
-      </div>
-      {/* Floating Chat Widget — Dev Agent */}
-      <Suspense fallback={null}>
-        <ChatWidget />
-      </Suspense>
-    </AppProvider>
+    <>
+      <AppProvider>
+        <div className={cn("relative flex h-screen w-full flex-col overflow-hidden bg-canvas", "desktop-app-container")}>
+          <main className="relative h-full w-full overflow-hidden">
+            <Outlet />
+          </main>
+        </div>
+      </AppProvider>
+      {/* Floating Chat Widget — Dev Agent (client-only, outside AppProvider) */}
+      <ClientOnly>
+        <Suspense fallback={null}>
+          <ChatWidget />
+        </Suspense>
+      </ClientOnly>
+    </>
   );
 }
 
