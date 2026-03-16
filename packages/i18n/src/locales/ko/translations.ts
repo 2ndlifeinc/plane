@@ -1035,12 +1035,14 @@ export default {
       calendar: "캘린더",
       spreadsheet: "테이블",
       gantt: "타임라인",
+      focus: "포커스",
       title: {
         list: "목록 레이아웃",
         kanban: "보드 레이아웃",
         calendar: "캘린더 레이아웃",
         spreadsheet: "테이블 레이아웃",
         gantt: "타임라인 레이아웃",
+        focus: "포커스 레이아웃",
       },
     },
     states: {

@@ -40,6 +40,7 @@ const LAYOUTS = [
   EIssueLayoutTypes.CALENDAR,
   EIssueLayoutTypes.SPREADSHEET,
   EIssueLayoutTypes.GANTT,
+  EIssueLayoutTypes.FOCUS,
 ];
 
 export const HeaderFilters = observer(function HeaderFilters(props: Props) {

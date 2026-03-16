@@ -13,6 +13,7 @@ import {
 } from "@plane/propel/icons";
 import type { ISvgIcons } from "@plane/propel/icons";
 import { EIssueLayoutTypes } from "@plane/types";
+import { Target } from "lucide-react";
 
 export function IssueLayoutIcon({
   layout,
@@ -35,6 +36,8 @@ export function IssueLayoutIcon({
       return <SheetLayoutIcon {...iconProps} />;
     case EIssueLayoutTypes.GANTT:
       return <TimelineLayoutIcon {...iconProps} />;
+    case EIssueLayoutTypes.FOCUS:
+      return <Target {...iconProps} />;
     default:
       return null;
   }
