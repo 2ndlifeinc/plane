@@ -108,10 +108,11 @@ export const ProjectAuthWrapper = observer(function ProjectAuthWrapper(props: IP
     revalidateOnFocus: false,
   });
   // fetching project intake state
-  useSWR(PROJECT_INTAKE_STATE(projectId, currentProjectRole), () => fetchProjectIntakeState(workspaceSlug, projectId).catch(() => {}), {
-    revalidateIfStale: false,
-    revalidateOnFocus: false,
-  });
+  useSWR(
+    PROJECT_INTAKE_STATE(projectId, currentProjectRole),
+    () => fetchProjectIntakeState(workspaceSlug, projectId).catch(() => null),
+    { revalidateIfStale: false, revalidateOnFocus: false, shouldRetryOnError: false }
+  );
   // fetching project estimates
   useSWR(PROJECT_ESTIMATES(projectId, currentProjectRole), () => getProjectEstimates(workspaceSlug, projectId), {
     revalidateIfStale: false,
