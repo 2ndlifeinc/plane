@@ -87,7 +87,7 @@ export const FocusLayout = observer(function FocusLayout() {
   const workspaceSlug = ws?.toString();
   const projectId = pj?.toString();
 
-  const { issues, issuesFilter } = useIssues(EIssuesStoreType.PROJECT);
+  const { issues } = useIssues(EIssuesStoreType.PROJECT);
   const { issueMap } = useIssues();
   const { projectStates } = useProjectState();
   const { setPeekIssue, getIsIssuePeeked } = useIssueDetail(EIssueServiceType.ISSUES);
@@ -108,14 +108,13 @@ export const FocusLayout = observer(function FocusLayout() {
     workspaceSlug && projectId ? `FOCUS_VIEW_ISSUES_${workspaceSlug}_${projectId}` : null,
     async () => {
       if (workspaceSlug && projectId) {
-        await issuesFilter?.fetchFilters(workspaceSlug, projectId);
         await issues?.fetchIssues(workspaceSlug, projectId, "init-loader", {
           canGroup: false,
           perPageCount: 200,
         });
       }
     },
-    { revalidateIfStale: false, revalidateOnFocus: false }
+    { revalidateIfStale: false, revalidateOnFocus: false, shouldRetryOnError: false }
   );
 
   if (issues?.getIssueLoader() === "init-loader") {
