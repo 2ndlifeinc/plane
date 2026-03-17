@@ -20,6 +20,8 @@ export enum EIssueLayoutTypes {
   SPREADSHEET = "spreadsheet",
   FOCUS = "focus",
   MATRIX = "matrix",
+  TIMELINE = "timeline",
+  BRAINDUMP_LIST = "braindump_list",
 }
 
 export enum EIssueServiceType {

@@ -22,6 +22,8 @@ import { IssuePeekOverview } from "../../peek-overview";
 import { CalendarLayout } from "../calendar/roots/project-root";
 import { FocusLayout } from "../focus";
 import { MatrixLayout } from "../matrix";
+import { TimelineLayout } from "../timeline";
+import { BraindumpListLayout } from "../braindump-list";
 import { BaseGanttRoot } from "../gantt";
 import { KanBanLayout } from "../kanban/roots/project-root";
 import { ListLayout } from "../list/roots/project-root";
@@ -43,6 +45,10 @@ function ProjectIssueLayout(props: { activeLayout: EIssueLayoutTypes | undefined
       return <FocusLayout />;
     case EIssueLayoutTypes.MATRIX:
       return <MatrixLayout />;
+    case EIssueLayoutTypes.TIMELINE:
+      return <TimelineLayout />;
+    case EIssueLayoutTypes.BRAINDUMP_LIST:
+      return <BraindumpListLayout />;
     default:
       return null;
   }

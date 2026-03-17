@@ -70,7 +70,12 @@ export const ProjectIssuesMobileHeader = observer(function ProjectIssuesMobileHe
       />
       <div className="z-[13] flex justify-evenly border-b border-subtle bg-surface-1 py-2 md:hidden">
         <MobileLayoutSelection
-          layouts={[EIssueLayoutTypes.FOCUS, EIssueLayoutTypes.MATRIX, EIssueLayoutTypes.GANTT, EIssueLayoutTypes.LIST]}
+          layouts={[
+            EIssueLayoutTypes.FOCUS,
+            EIssueLayoutTypes.MATRIX,
+            EIssueLayoutTypes.TIMELINE,
+            EIssueLayoutTypes.BRAINDUMP_LIST,
+          ]}
           onChange={handleLayoutChange}
         />
         <div className="flex flex-grow items-center justify-center border-l border-subtle text-13 text-secondary">

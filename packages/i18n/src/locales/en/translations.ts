@@ -882,6 +882,8 @@ export default {
       gantt: "Timeline",
       focus: "Focus",
       matrix: "Matrix",
+      timeline: "Timeline",
+      braindump_list: "List",
       title: {
         list: "List Layout",
         kanban: "Board Layout",
@@ -890,6 +892,8 @@ export default {
         gantt: "Timeline Layout",
         focus: "Focus Layout",
         matrix: "Matrix Layout",
+        timeline: "Timeline Layout",
+        braindump_list: "List Layout",
       },
     },
     states: {

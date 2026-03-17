@@ -1037,6 +1037,8 @@ export default {
       gantt: "타임라인",
       focus: "포커스",
       matrix: "매트릭스",
+      timeline: "타임라인",
+      braindump_list: "리스트",
       title: {
         list: "목록 레이아웃",
         kanban: "보드 레이아웃",
@@ -1045,6 +1047,8 @@ export default {
         gantt: "타임라인 레이아웃",
         focus: "포커스 레이아웃",
         matrix: "매트릭스 레이아웃",
+        timeline: "타임라인 레이아웃",
+        braindump_list: "리스트 레이아웃",
       },
     },
     states: {

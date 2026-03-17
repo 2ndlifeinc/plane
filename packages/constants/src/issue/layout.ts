@@ -6,7 +6,16 @@
 
 import { EIssueLayoutTypes } from "@plane/types";
 
-export type TIssueLayout = "list" | "kanban" | "calendar" | "spreadsheet" | "gantt" | "focus" | "matrix";
+export type TIssueLayout =
+  | "list"
+  | "kanban"
+  | "calendar"
+  | "spreadsheet"
+  | "gantt"
+  | "focus"
+  | "matrix"
+  | "timeline"
+  | "braindump_list";
 
 export type TIssueLayoutMap = Record<
   EIssueLayoutTypes,
@@ -69,6 +78,16 @@ export const ISSUE_LAYOUT_MAP: TIssueLayoutMap = {
     key: EIssueLayoutTypes.MATRIX,
     i18n_title: "issue.layouts.title.matrix",
     i18n_label: "issue.layouts.matrix",
+  },
+  [EIssueLayoutTypes.TIMELINE]: {
+    key: EIssueLayoutTypes.TIMELINE,
+    i18n_title: "issue.layouts.title.timeline",
+    i18n_label: "issue.layouts.timeline",
+  },
+  [EIssueLayoutTypes.BRAINDUMP_LIST]: {
+    key: EIssueLayoutTypes.BRAINDUMP_LIST,
+    i18n_title: "issue.layouts.title.braindump_list",
+    i18n_label: "issue.layouts.braindump_list",
   },
 };
 

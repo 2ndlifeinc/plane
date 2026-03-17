@@ -35,7 +35,12 @@ type Props = {
   storeType?: EIssuesStoreType.PROJECT | EIssuesStoreType.EPIC;
 };
 // braindump-dashboard: 4뷰 탭 대시보드 (포커스, 매트릭스, 타임라인, 리스트)
-const LAYOUTS = [EIssueLayoutTypes.FOCUS, EIssueLayoutTypes.MATRIX, EIssueLayoutTypes.GANTT, EIssueLayoutTypes.LIST];
+const LAYOUTS = [
+  EIssueLayoutTypes.FOCUS,
+  EIssueLayoutTypes.MATRIX,
+  EIssueLayoutTypes.TIMELINE,
+  EIssueLayoutTypes.BRAINDUMP_LIST,
+];
 
 export const HeaderFilters = observer(function HeaderFilters(props: Props) {
   const {

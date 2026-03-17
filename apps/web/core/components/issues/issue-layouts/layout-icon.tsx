@@ -13,7 +13,7 @@ import {
 } from "@plane/propel/icons";
 import type { ISvgIcons } from "@plane/propel/icons";
 import { EIssueLayoutTypes } from "@plane/types";
-import { Target, LayoutGrid } from "lucide-react";
+import { Target, LayoutGrid, GanttChart, ListFilter } from "lucide-react";
 
 export function IssueLayoutIcon({
   layout,
@@ -40,6 +40,10 @@ export function IssueLayoutIcon({
       return <Target {...iconProps} />;
     case EIssueLayoutTypes.MATRIX:
       return <LayoutGrid {...iconProps} />;
+    case EIssueLayoutTypes.TIMELINE:
+      return <GanttChart {...iconProps} />;
+    case EIssueLayoutTypes.BRAINDUMP_LIST:
+      return <ListFilter {...iconProps} />;
     default:
       return null;
   }
