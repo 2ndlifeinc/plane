@@ -9,7 +9,7 @@
  * - 중/하/라벨없음 → 덜 중요 (하단)
  */
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { observer } from "mobx-react";
 import { useParams } from "next/navigation";
 import useSWR from "swr";
@@ -100,6 +100,15 @@ function getQuadrant(issue: TIssue, labels: IIssueLabel[]): Quadrant {
   if (u && !i) return "delegate";
   return "park";
 }
+
+// ── 기본 중요도 라벨 시드 ──
+
+const DEFAULT_IMPORTANCE_LABELS: { name: string; color: string }[] = [
+  { name: "중요도: 최상", color: "#ef4444" },
+  { name: "중요도: 상", color: "#f97316" },
+  { name: "중요도: 중", color: "#eab308" },
+  { name: "중요도: 하", color: "#9ca3af" },
+];
 
 // ── UI config ──
 
@@ -253,7 +262,10 @@ export const MatrixLayout = observer(function MatrixLayout() {
   const { issues } = useIssues(EIssuesStoreType.PROJECT);
   const { issueMap } = useIssues();
   const { setPeekIssue, getIsIssuePeeked } = useIssueDetail(EIssueServiceType.ISSUES);
-  const { projectLabels, fetchProjectLabels } = useLabel();
+  const { projectLabels, fetchProjectLabels, createLabel } = useLabel();
+
+  // 중요도 라벨 자동 생성 (최초 1회)
+  const seededRef = useRef(false);
 
   const handleIssuePeekOverview = useCallback(
     (issue: TIssue) => {
@@ -279,6 +291,19 @@ export const MatrixLayout = observer(function MatrixLayout() {
           perPageCount: 200,
         });
         await fetchProjectLabels(workspaceSlug, projectId);
+
+        // 중요도 라벨이 하나도 없으면 기본 라벨 자동 생성
+        if (!seededRef.current) {
+          seededRef.current = true;
+          const existing = (projectLabels || []).filter((l) => getImportanceScore(l.name) !== null);
+          if (existing.length === 0) {
+            await Promise.all(
+              DEFAULT_IMPORTANCE_LABELS.map((def) =>
+                createLabel(workspaceSlug, projectId, { name: def.name, color: def.color })
+              )
+            );
+          }
+        }
       }
     },
     { revalidateIfStale: false, revalidateOnFocus: false, shouldRetryOnError: false }
