@@ -7,7 +7,7 @@ on:
 
 jobs:
   check-version:
-    runs-on: [self-hosted, Linux]
+    runs-on: [self-hosted, macos-or-linux]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

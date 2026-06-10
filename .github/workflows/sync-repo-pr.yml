@@ -15,7 +15,7 @@ env:
 
 jobs:
   create_pull_request:
-    runs-on: [self-hosted, Linux]
+    runs-on: [self-hosted, macos-or-linux]
     permissions:
       pull-requests: write
       contents: write

@@ -11,7 +11,7 @@ env:
 
 jobs:
   sync_changes:
-    runs-on: [self-hosted, Linux]
+    runs-on: [self-hosted, macos-or-linux]
     permissions:
       pull-requests: write
       contents: read

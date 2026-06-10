@@ -20,7 +20,7 @@ jobs:
   # Format check has no build dependencies - run immediately in parallel
   check-format:
     name: check:format
-    runs-on: [self-hosted, Linux]
+    runs-on: [self-hosted, macos-or-linux]
     timeout-minutes: 10
     if: |
       github.event.pull_request.draft == false &&
@@ -62,7 +62,7 @@ jobs:
   # Build packages - required for lint and type checks
   build:
     name: Build packages
-    runs-on: [self-hosted, Linux]
+    runs-on: [self-hosted, macos-or-linux]
     timeout-minutes: 15
     if: |
       github.event.pull_request.draft == false &&
@@ -120,7 +120,7 @@ jobs:
   # Lint check - no build dependency, OxLint is a standalone Rust binary
   check-lint:
     name: check:lint
-    runs-on: [self-hosted, Linux]
+    runs-on: [self-hosted, macos-or-linux]
     timeout-minutes: 10
     if: |
       github.event.pull_request.draft == false &&
@@ -162,7 +162,7 @@ jobs:
   # Type check depends on build artifacts
   check-types:
     name: check:types
-    runs-on: [self-hosted, Linux]
+    runs-on: [self-hosted, macos-or-linux]
     needs: build
     timeout-minutes: 15
     env:

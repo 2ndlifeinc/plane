@@ -21,7 +21,7 @@ concurrency:
 jobs:
   lint-api:
     name: Lint API
-    runs-on: [self-hosted, Linux]
+    runs-on: [self-hosted, macos-or-linux]
     timeout-minutes: 25
     if: |
       github.event.pull_request.draft == false &&

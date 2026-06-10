@@ -10,7 +10,7 @@ on:
 jobs:
   analyze:
     name: Analyze
-    runs-on: [self-hosted, Linux]
+    runs-on: [self-hosted, macos-or-linux]
     permissions:
       actions: read
       contents: read

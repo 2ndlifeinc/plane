@@ -14,7 +14,7 @@ env:
 jobs:
   branch_build_setup:
     name: Build Setup
-    runs-on: [self-hosted, Linux]
+    runs-on: [self-hosted, macos-or-linux]
     outputs:
       gh_branch_name: ${{ steps.set_env_variables.outputs.TARGET_BRANCH }}
       flat_branch_name: ${{ steps.set_env_variables.outputs.FLAT_BRANCH_NAME }}
@@ -51,7 +51,7 @@ jobs:
         uses: actions/checkout@v4
 
   full_build_push:
-    runs-on: [self-hosted, Linux]
+    runs-on: [self-hosted, macos-or-linux]
     needs: [branch_build_setup]
     env:
       BUILD_TYPE: full
@@ -101,7 +101,7 @@ jobs:
   feature-deploy:
     needs: [branch_build_setup, full_build_push]
     name: Feature Deploy
-    runs-on: [self-hosted, Linux]
+    runs-on: [self-hosted, macos-or-linux]
     env:
       KUBE_CONFIG_FILE: ${{ secrets.FEATURE_PREVIEW_KUBE_CONFIG }}
       DEPLOYMENT_NAME: ${{ needs.branch_build_setup.outputs.flat_branch_name }}
