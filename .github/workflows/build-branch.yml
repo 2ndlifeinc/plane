@@ -297,12 +297,6 @@ jobs:
           bash ./build.sh --release $aio_version
           echo "AIO_BUILD_VERSION=${aio_version}" >> $GITHUB_OUTPUT
 
-      - name: Upload AIO Assets
-        uses: actions/upload-artifact@v4
-        with:
-          path: ./deployments/aio/community/dist
-          name: aio-assets-dist
-
       - name: AIO Build and Push
         uses: makeplane/actions/build-push@v1.1.0
         with:
@@ -350,18 +344,6 @@ jobs:
           cp ./deployments/cli/community/install.sh deployments/cli/community/setup.sh
           sed -i 's/${APP_RELEASE:-stable}/${APP_RELEASE:-'${REL_VERSION}'}/g' deployments/cli/community/docker-compose.yml
           # sed -i 's/APP_RELEASE=stable/APP_RELEASE='${REL_VERSION}'/g' deployments/cli/community/variables.env
-
-      - name: Upload Assets
-        uses: actions/upload-artifact@v4
-        with:
-          name: community-assets
-          path: |
-            ./deployments/cli/community/setup.sh
-            ./deployments/cli/community/restore.sh
-            ./deployments/cli/community/restore-airgapped.sh
-            ./deployments/cli/community/docker-compose.yml
-            ./deployments/cli/community/variables.env
-            ./deployments/swarm/community/swarm.sh
 
   publish_release:
     if: ${{ needs.branch_build_setup.outputs.build_type == 'Release' }}
